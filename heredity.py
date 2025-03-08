@@ -38,7 +38,7 @@ PROBS = {
 
 
 def main():
-
+    print("======DATA======")
     # Check for proper usage
     if len(sys.argv) != 2:
         sys.exit("Usage: python heredity.py data.csv")
@@ -60,38 +60,54 @@ def main():
         for person in people
     }
 
+
     # Loop over all sets of people who might have the trait
     names = set(people)
-    for have_trait in powerset(names):
+    print(f"names: {names} \n")
+    for name in names:
+        print(f"people[{name}] - {"SON" if people[name]['mother'] or people[name]['father'] else "PARENT"}:\n {people[name]}")
+    print(f"probabilities:\n {probabilities} \n")
+    # print(f"powerset(names):\n {powerset(names)} \n")
+    
+    print("================\n")
 
-        # Check if current set of people violates known information
+    # Loop over all (sub)sets of people who might have the gene, skip the ones that don't
+    for have_trait in powerset(names):
+        # print("\nPowerset: ", have_trait)
+        # Check if current set of people violates known information - returns true or false
         fails_evidence = any(
             (people[person]["trait"] is not None and
              people[person]["trait"] != (person in have_trait))
             for person in names
         )
         if fails_evidence:
+            # If trait was not found, skip this subset
             continue
 
-        # Loop over all sets of people who might have the gene
+
+        # Else, continue looping over for this subset
+        print(f"Trait Found in subset: {have_trait} - Examining further..\n")
         for one_gene in powerset(names):
+            print("One Gene: ", one_gene)
             for two_genes in powerset(names - one_gene):
+                print("Two Genes: ", two_genes)
 
                 # Update probabilities with new joint probability
                 p = joint_probability(people, one_gene, two_genes, have_trait)
-                update(probabilities, one_gene, two_genes, have_trait, p)
+            #     update(probabilities, one_gene, two_genes, have_trait, p)
+            print("\n")
 
-    # Ensure probabilities sum to 1
-    normalize(probabilities)
+    # # Ensure probabilities sum to 1
+    # normalize(probabilities)
 
-    # Print results
-    for person in people:
-        print(f"{person}:")
-        for field in probabilities[person]:
-            print(f"  {field.capitalize()}:")
-            for value in probabilities[person][field]:
-                p = probabilities[person][field][value]
-                print(f"    {value}: {p:.4f}")
+    # # Print results
+    # for person in people:
+    #     print(f"{person}:")
+    #     for field in probabilities[person]:
+    #         print(f"  {field.capitalize()}:")
+    #         for value in probabilities[person][field]:
+    #             p = probabilities[person][field][value]
+    #             print(f"    {value}: {p:.4f}")
 
 
 def load_data(filename):
@@ -120,6 +136,10 @@ def powerset(s):
     """
     Return a list of all possible subsets of set s.
     """
+    # A powerset is the set of all possible subsets of a given set, including the empty set and the set itself.
+    # If you have a set 𝑆 its powerset is denoted as 𝑃(𝑆). For example S={a,b} , P(S)={∅,{a},{b},{a,b}}
+    # If a set has 𝑛 elements, its powerset contains 2^𝑛 subsets.
+    # Powersets are important for counting all possible selections of elements.
     s = list(s)
     return [
         set(s) for s in itertools.chain.from_iterable(
@@ -127,6 +147,9 @@ def powerset(s):
         )
     ]
 
+
+
+# TODO
 
 def joint_probability(people, one_gene, two_genes, have_trait):
     """

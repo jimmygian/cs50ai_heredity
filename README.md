@@ -1,4 +1,4 @@
-# CS50AI | Lecture 2 - Uncertainty | Project 2 - [`Heredity`](https://cs50.harvard.edu/ai/2024/projects/2/heredity/)
+# CS50AI | Lecture 2 - Uncertainty | Project 2B - [`Heredity`](https://cs50.harvard.edu/ai/2024/projects/2/heredity/)
 
 This project is a mandatory assignment from **CS50AI – Lecture 2: "Uncertainty"**.
 

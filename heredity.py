@@ -1,6 +1,9 @@
 import csv
 import itertools
 import sys
+import math
+# import pandas
+# import numpy
 
 PROBS = {
 
@@ -72,6 +75,8 @@ def main():
     print("================\n")
 
     # Loop over all (sub)sets of people who might have the gene, skip the ones that don't
+    # 'have_trait' is a set of all people for whom we want to compute the probability that they have the trait.
+    # p = joint_probability(people, set(["Harry"]), set(["James"]), set({'James'}))
     for have_trait in powerset(names):
         # print("\nPowerset: ", have_trait)
         # Check if current set of people violates known information - returns true or false
@@ -84,13 +89,11 @@ def main():
             # If trait was not found, skip this subset
             continue
 
-
         # Else, continue looping over for this subset
         print(f"Trait Found in subset: {have_trait} - Examining further..\n")
+        
         for one_gene in powerset(names):
-            print("One Gene: ", one_gene)
             for two_genes in powerset(names - one_gene):
-                print("Two Genes: ", two_genes)
 
                 # Update probabilities with new joint probability
                 p = joint_probability(people, one_gene, two_genes, have_trait)
@@ -162,7 +165,104 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    raise NotImplementedError
+    print("People: ", people)
+    print("One Gene: ", one_gene)
+    print("Two Genes: ", two_genes)
+    print("Have Trait: ", have_trait)
+
+    all_probs = []
+    for person in people:
+        # For anyone with no parents listed in the data set, 
+        # use the probability distribution PROBS["gene"] 
+        # to determine the probability that they have a particular number of the gene.
+        if not people[person]["father"] and not people[person]["mother"]:
+            print(f"'{person}' does not have parents listed.")
+            print("Probability will be calculated based on PROBS['gene']")
+            copies_count = 0
+            copies_prob = 0
+            if person in one_gene:
+                copies_count = 1
+                copies_prob = PROBS["gene"][1]
+                print(f"{person} has 1 gene with 'p({copies_count})={copies_prob}'")
+            if person in two_genes:
+                copies_count = 2
+                copies_prob = PROBS["gene"][2]
+                print(f"{person} has 2 genes with 'p({copies_count})={copies_prob}'")
+            if person not in one_gene and person not in two_genes:
+                copies_count = 0
+                copies_prob = PROBS["gene"][0]
+                print(f"{person} has 0 genes with 'p({copies_count})={copies_prob}'")
+            
+            p_trait = 0   
+            if person not in have_trait:
+                p_trait = PROBS["trait"][copies_count][False]
+                print(f"{person} does not have trait with 'p(no_trait)={p_trait}'")
+            else:
+                p_trait = PROBS["trait"][copies_count][True]
+                print(f"{person} does not have trait with 'p(has_trait)={p_trait}'")
+            
+            # joint_p = round((p_trait * copies_prob), 4)
+            joint_p = p_trait * copies_prob
+            all_probs.append(joint_p)
+            print(f"Joint Probability is: ", joint_p)
+
+
+        # For anyone with parents in the data set,
+        # each parent will pass one of their two genes on to their child randomly, 
+        # and there is a PROBS["mutation"] chance that it mutates (goes from being the gene to not being the gene, or vice versa).
+        else:
+            father = people[person]["father"]
+            mother = people[person]["mother"]
+            parents = [father, mother]
+            print(f"'{person}' has '{father}' and '{mother}' listed as parents.")
+            print("PARENTS: ", father, mother)
+
+            p = []
+            for parent in parents:
+                if parent in one_gene:
+                    p.append({"prob": 0.5 - PROBS["mutation"], "copies": 1})
+                    continue
+                if parent in two_genes:
+                    p.append({"prob": 1 - PROBS["mutation"], "copies": 2})
+                else:
+                    p.append({"prob": PROBS["mutation"], "copies": 0})
+
+            
+            # Calculate probabilities
+            combine_p_of_parents = 0
+            gene_count = None
+            if person in one_gene:
+                gene_count = 1
+                combine_p_of_parents = p[0]["prob"] * (1 - p[1]["prob"]) + p[1]["prob"] * (1 - p[0]["prob"])
+            elif person in two_genes:
+                gene_count = 2
+                combine_p_of_parents = p[0]["prob"] * p[1]["prob"]
+            else:
+                gene_count = 0
+                combine_p_of_parents = (1 - p[0]["prob"]) * (1 - p[1]["prob"])
+            
+            # print(f"Combined Probability of Parents is: ", combine_p_of_parents)
+            joint_p = 0
+            p_trait = 0
+            if person in have_trait:
+                p_trait = PROBS["trait"][gene_count][True]
+            else:
+                p_trait = PROBS["trait"][gene_count][False]
+            
+            joint_p = combine_p_of_parents * p_trait
+            all_probs.append(joint_p)
+
+
+                
+       
+        # Use the probability distribution PROBS["trait"] to compute the probability that a person does or does not have a particular trait.
+
+    print("all probs: ", all_probs)
+    result = math.prod(all_probs)
+    print("result: ", result, "\n\n")
+    return result
+        
+
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):

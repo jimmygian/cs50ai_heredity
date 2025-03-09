@@ -79,6 +79,8 @@ def main():
     # The goal here is to examine different possible trait distributions among the people.
     
     # p = joint_probability(people, set(["Harry"]), set(["James"]), set({'James'}))
+    # update(probabilities, set(["Harry"]), set(["James"]), set({'James'}), 0.00123353453)
+    
     they_have_it = []
     for have_trait in powerset(names):
         # print("\nPowerset: ", have_trait)
@@ -93,7 +95,7 @@ def main():
             continue
         
         they_have_it.append(have_trait)
-        print(f"Subset '{have_trait}' includes at least one person with the trait. - Examining further..\n")
+        # print(f"Subset '{have_trait}' includes at least one person with the trait. - Examining further..\n")
     
         # Else, continue looping over for this subset
         for one_gene in powerset(names):
@@ -101,8 +103,9 @@ def main():
 
                 # Update probabilities with new joint probability
                 p = joint_probability(people, one_gene, two_genes, have_trait)
-            #     update(probabilities, one_gene, two_genes, have_trait, p)
-            print("\n")
+                update(probabilities, one_gene, two_genes, have_trait, p)
+
+    print(probabilities)
 
     # # Ensure probabilities sum to 1
     # normalize(probabilities)
@@ -169,10 +172,10 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         * everyone in set `have_trait` has the trait, and
         * everyone not in set` have_trait` does not have the trait.
     """
-    print("People: ", people)
-    print("One Gene: ", one_gene)
-    print("Two Genes: ", two_genes)
-    print("Have Trait: ", have_trait)
+    # print("People: ", people)
+    # print("One Gene: ", one_gene)
+    # print("Two Genes: ", two_genes)
+    # print("Have Trait: ", have_trait)
 
     all_probs = []
     
@@ -182,11 +185,11 @@ def joint_probability(people, one_gene, two_genes, have_trait):
         
         # If no parents listed in person, use base probability
         if not people[person]["father"] and not people[person]["mother"]:
-            print(f"'{person}' does not have parents listed.")
-            print("Probability will be calculated based on PROBS['gene']")
+            # print(f"'{person}' does not have parents listed.")
+            # print("Probability will be calculated based on PROBS['gene']")
   
             copies_prob = PROBS["gene"][gene_count]
-            print(f"{person} has {gene_count} genes with p({gene_count})={copies_prob}")
+            # print(f"{person} has {gene_count} genes with p({gene_count})={copies_prob}")
 
         else:
             # Person has parents, calculate probability based on inheritance
@@ -202,26 +205,24 @@ def joint_probability(people, one_gene, two_genes, have_trait):
             else:
                 copies_prob = (1 - p_mother) * (1 - p_father)
 
-            print(f"{person} inherits probability: {copies_prob}")
+            # print(f"{person} inherits probability: {copies_prob}")
 
         # Compute trait probability
         if person in have_trait:
             p_trait = PROBS["trait"][gene_count][True]
         else:
             p_trait = PROBS["trait"][gene_count][False]
-        print(f"{person} {'has' if person in have_trait else 'does not have'} trait with p={p_trait}")
+        # print(f"{person} {'has' if person in have_trait else 'does not have'} trait with p={p_trait}")
 
         # Compute joint probability
         joint_p = copies_prob * p_trait
         all_probs.append(joint_p)
-        print(f"Joint probability for {person}: {joint_p}\n")
+        # print(f"Joint probability for {person}: {joint_p}\n")
 
     # Compute final joint probability
     result = math.prod(all_probs)
-    print("Final joint probability:", result, "\n\n")
+    # print("Final joint probability:", result, "\n\n")
     return result
-        
-
 
 
 def update(probabilities, one_gene, two_genes, have_trait, p):
@@ -231,7 +232,29 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
     Which value for each distribution is updated depends on whether
     the person is in `have_gene` and `have_trait`, respectively.
     """
-    raise NotImplementedError
+    # The update function adds a new joint distribution probability 
+    # to the existing probability distributions in `probabilities`.
+    updated_probabilities = probabilities.copy()
+
+    for person in probabilities:
+        # Get gene count for person
+        gene_count = 1 if person in one_gene else (2 if person in two_genes else 0)
+        # print(f"{person} has {gene_count} genes.")
+
+        # by adding `p` to the appropriate value in each distribution...
+        # Update probabilities[person]["gene"] for person
+        updated_probabilities[person]["gene"][gene_count] += p 
+
+        # Update probabilities[person]["trait"] for person
+        updated_probabilities[person]["trait"][person in have_trait] += p
+
+    # print(updated_probabilities)
+    return updated_probabilities 
+
+
+
+
+    # raise NotImplementedError
 
 
 def normalize(probabilities):

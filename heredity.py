@@ -80,8 +80,8 @@ def main():
     
     # p = joint_probability(people, set(["Harry"]), set(["James"]), set({'James'}))
     # update(probabilities, set(["Harry"]), set(["James"]), set({'James'}), 0.00123353453)
+    # normalize({'Harry': {'gene': {2: 0.000292184739, 1: 0.014499220722, 0: 0.017026184539}, 'trait': {True: 0.00847974553006, False: 0.02333784446994001}}, 'James': {'gene': {2: 0.00628615, 1: 0.016247280000000003, 0: 0.009284159999999996}, 'trait': {True: 0.03181759000000002, False: 0}}, 'Lily': {'gene': {2: 0.00011515, 1: 0.0004342800000000001, 0: 0.031268159999999996}, 'trait': {True: 0, False: 0.03181759000000002}}})
     
-    they_have_it = []
     for have_trait in powerset(names):
         # print("\nPowerset: ", have_trait)
         # Check if current set of people violates known information - returns true or false
@@ -94,7 +94,6 @@ def main():
             # If trait was not found, skip this subset
             continue
         
-        they_have_it.append(have_trait)
         # print(f"Subset '{have_trait}' includes at least one person with the trait. - Examining further..\n")
     
         # Else, continue looping over for this subset
@@ -105,19 +104,17 @@ def main():
                 p = joint_probability(people, one_gene, two_genes, have_trait)
                 update(probabilities, one_gene, two_genes, have_trait, p)
 
-    print(probabilities)
+    # Ensure probabilities sum to 1
+    normalize(probabilities)
 
-    # # Ensure probabilities sum to 1
-    # normalize(probabilities)
-
-    # # Print results
-    # for person in people:
-    #     print(f"{person}:")
-    #     for field in probabilities[person]:
-    #         print(f"  {field.capitalize()}:")
-    #         for value in probabilities[person][field]:
-    #             p = probabilities[person][field][value]
-    #             print(f"    {value}: {p:.4f}")
+    # Print results
+    for person in people:
+        print(f"{person}:")
+        for field in probabilities[person]:
+            print(f"  {field.capitalize()}:")
+            for value in probabilities[person][field]:
+                p = probabilities[person][field][value]
+                print(f"    {value}: {p:.4f}")
 
 
 def load_data(filename):
@@ -249,12 +246,7 @@ def update(probabilities, one_gene, two_genes, have_trait, p):
         updated_probabilities[person]["trait"][person in have_trait] += p
 
     # print(updated_probabilities)
-    return updated_probabilities 
-
-
-
-
-    # raise NotImplementedError
+    probabilities = updated_probabilities
 
 
 def normalize(probabilities):
@@ -262,7 +254,37 @@ def normalize(probabilities):
     Update `probabilities` such that each probability distribution
     is normalized (i.e., sums to 1, with relative proportions the same).
     """
-    raise NotImplementedError
+    print(probabilities)
+    # for every probability distribution
+    # We need to do a( value_1 + value_2 + ... + value_n) = 1
+    # a = 1 / ( value_1 + value_2 + ... + value_n)
+    normalized_probabilities = probabilities.copy()
+    for person in probabilities:
+        # Normalize gene
+        genes = probabilities[person]["gene"]
+        traits = probabilities[person]["trait"]
+
+        # Get normalization value (a)
+        summation_genes = 0
+        for gene in genes:
+            summation_genes += genes[gene]
+        aG = 1 / summation_genes
+
+        summation_traits = 0
+        for trait in traits:
+            summation_traits += traits[trait]
+        aT = 1 / summation_traits
+
+        # Update probabilities
+        for gene in genes:
+            normalized_probabilities[person]["gene"][gene] = aG * genes[gene]
+        for trait in traits:
+            normalized_probabilities[person]["trait"][trait] = aG * traits[trait]
+    
+    probabilities = normalized_probabilities
+
+
+
 
 
 if __name__ == "__main__":
